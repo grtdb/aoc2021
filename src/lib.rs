@@ -1,7 +1,5 @@
-// use std::io::prelude::*;
-// mod day01 {
+use transpose::transpose;
 
-// }
 pub fn aoc2021_test(pattern: &String, file: &String) -> usize {
   file.lines().filter(|l| l.contains(pattern)).count()
 }
@@ -24,6 +22,63 @@ pub fn day01_p2(input: String) -> usize {
     .windows(2).filter(|x| x[1] > x[0])
     .count()
 }
+
+pub fn prep_diagnostic(input: String, &input_len: &usize, &bits: &usize) -> Vec<u32> {
+  let input = input.lines()
+    .collect::<Vec<_>>().join("")
+    .chars().map(|c| c.to_digit(10).unwrap()).collect::<Vec<_>>();
+  
+  let arr_len = input.iter().count();
+
+  let mut output_array: Vec<u32> = vec![0; arr_len];
+  transpose(&input, &mut output_array, bits, input_len);
+
+  output_array
+}
+
+pub fn day03_p1(raw_input: String, bits: usize) -> u32 {
+  let input_len = raw_input.lines().count();
+
+  // let input = raw_input.lines()
+  //   .collect::<Vec<_>>().join("")
+  //   .chars().map(|c| c.to_digit(10).unwrap()).collect::<Vec<_>>();
+  
+  // let arr_len = input.iter().count();
+
+  // let mut output_array: Vec<u32> = vec![0; arr_len];
+  // transpose(&input, &mut output_array, bits, input_len);
+  
+  let output_array = prep_diagnostic(raw_input, &input_len, &bits);
+
+  // assert_eq!(output_array, test_diag);
+
+  let mut common: Vec<u32> = vec![];
+  for b in 0..bits {
+    let row = b * input_len;
+    let bs = &output_array[row..row + input_len];
+    common.push(
+      if (bs.iter().sum::<u32>()) > (input_len as u32 / 2) {1} else {0}
+    );
+  }
+
+  let common_bin_str = common.iter().map(|i| i.to_string())
+    .collect::<Vec<_>>().join("");
+
+  let gamma = u32::from_str_radix(&common_bin_str[..], 2).unwrap();
+  // println!("{:?}, {:?}", common_bin_str, gamma);
+
+  let epsilon_str = common.iter()
+    .map(|&b| if b == 1 {"0"} else {"1"}) // Flip bits
+    .collect::<Vec<_>>().join("");
+  let epsilon = u32::from_str_radix(&epsilon_str[..], 2).unwrap();
+  // println!("{:?}, {:?}", epsilon_str, epsilon);
+
+  gamma * epsilon
+}
+
+// pub fn day03_p2(input: String, bits: usize) -> u32 {
+
+// }
 
 // Solution to Day 02 - refactor into 
 // let input: Vec<&str> = reader.lines().collect();

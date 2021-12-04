@@ -41,10 +41,8 @@ fn find_common_bit(bits: &[u32], if_eq: u32) -> u32 {
   let half = len as u32 / 2;
   let sum = bits.iter().sum::<u32>();
   if len % 2 == 0 && sum == half {
-    println!("They eq: len={:?} sum={:?}, half={:?}", len, sum, half);
     if_eq
   } else {
-    println!("They un-eq: len={:?} sum={:?}, half={:?}", len, sum, half);
     if (sum) > (half) {1} else {0} 
   }
 }
@@ -74,58 +72,28 @@ pub fn day03_p1(raw_input: String, bits: usize) -> u32 {
   gamma * epsilon
 }
 
+fn day03_p2_process(mut input: Vec<&str>, bits: usize, finder: fn(&[u32], u32) -> u32) -> u32 {
+  for b in 0..bits {
+    let len = input.iter().count();
+    if len == 1 { break; }
+
+    let prepd = prep_diagnostic(input.join("\n"), &len, &bits);
+    let row = b * len;
+    let bs = &prepd[row..row + len];
+
+    let common = finder(bs, 1);
+    input = input.into_iter()
+      .filter(|i| &i[b..b+1] == common.to_string())
+      .collect();
+  }
+  u32::from_str_radix(input[0], 2).unwrap()
+}
+
 pub fn day03_p2(raw_input: String, bits: usize) -> u32 {
   let input: Vec<&str> = raw_input.lines().collect();
-
-  println!("Calculating O2 Generator Rating...");
-  let mut o2_gen_list = input.clone();
-  println!("{:?}", o2_gen_list);
-  for b in 0..bits {
-    let c = o2_gen_list.iter().count();
-    if c == 1 {
-      println!("1 result left");
-      break;
-    }
-
-    let o = prep_diagnostic(o2_gen_list.join("\n"), &c, &bits);
-    let row = b * c;
-    let bs = &o[row..row + c];
-
-    let common = find_common_bit(bs, 1);
-    o2_gen_list = o2_gen_list.into_iter()
-      .filter(|i| &i[b..b+1] == common.to_string())
-      .collect();
-    println!("{:?}", o2_gen_list);
-  }
-
-  println!("\n{:?}", o2_gen_list);
-  let o2_gen = u32::from_str_radix(o2_gen_list[0], 2).unwrap();
-  println!("{:?}\n\n", o2_gen);
-
-  println!("Calculating CO2 Scrubber Rating...");
-  let mut co2_scrub_list = input.clone();
-  println!("{:?}", co2_scrub_list);
-  for b in 0..bits {
-    let c = co2_scrub_list.iter().count();
-    if c == 1 {
-      println!("1 result left");
-      break;
-    }
-
-    let o = prep_diagnostic(co2_scrub_list.join("\n"), &c, &bits);
-    let row = b * c;
-    let bs = &o[row..row + c];
-
-    let common = find_uncommon_bit(bs, 1);
-    co2_scrub_list = co2_scrub_list.into_iter()
-      .filter(|i| &i[b..b+1] == common.to_string())
-      .collect();
-    println!("{:?}", co2_scrub_list);
-  }
-  println!("\n{:?}", co2_scrub_list);
-  let co2_scrub = u32::from_str_radix(co2_scrub_list[0], 2).unwrap();
-  println!("{:?}\n\n", co2_scrub);
-
+  let o2_gen = day03_p2_process(input.clone(), bits, find_common_bit);
+  let co2_scrub = day03_p2_process(input.clone(), bits, find_uncommon_bit);
+  
   o2_gen * co2_scrub
 }
 

@@ -36,29 +36,31 @@ pub fn prep_diagnostic(input: String, &input_len: &usize, &bits: &usize) -> Vec<
   output_array
 }
 
+fn find_common_bit(bits: &[u32], if_eq: u32) -> u32{
+  let len = bits.iter().count();
+  let half = len as u32 / 2;
+  let sum = bits.iter().sum::<u32>();
+
+  if sum == half {if_eq} else { if (sum) > (half) {1} else {0} }
+}
+
 pub fn day03_p1(raw_input: String, bits: usize) -> u32 {
   let input_len = raw_input.lines().count();
-
-  // let input = raw_input.lines()
-  //   .collect::<Vec<_>>().join("")
-  //   .chars().map(|c| c.to_digit(10).unwrap()).collect::<Vec<_>>();
-  
-  // let arr_len = input.iter().count();
-
-  // let mut output_array: Vec<u32> = vec![0; arr_len];
-  // transpose(&input, &mut output_array, bits, input_len);
   
   let output_array = prep_diagnostic(raw_input, &input_len, &bits);
-
-  // assert_eq!(output_array, test_diag);
 
   let mut common: Vec<u32> = vec![];
   for b in 0..bits {
     let row = b * input_len;
     let bs = &output_array[row..row + input_len];
-    common.push(
-      if (bs.iter().sum::<u32>()) > (input_len as u32 / 2) {1} else {0}
+    assert_eq!(
+      if (bs.iter().sum::<u32>()) > (input_len as u32 / 2) {1} else {0},
+      find_common_bit(bs, 1)
     );
+    // common.push(
+    //   if (bs.iter().sum::<u32>()) > (input_len as u32 / 2) {1} else {0}
+    // );
+    common.push(find_common_bit(bs, 1))
   }
 
   let common_bin_str = common.iter().map(|i| i.to_string())
@@ -68,7 +70,7 @@ pub fn day03_p1(raw_input: String, bits: usize) -> u32 {
   // println!("{:?}, {:?}", common_bin_str, gamma);
 
   let epsilon_str = common.iter()
-    .map(|&b| if b == 1 {"0"} else {"1"}) // Flip bits
+    .map(|&b| if b == 1 {"0"} else {"1"}) // Flip bits and "covert" to String
     .collect::<Vec<_>>().join("");
   let epsilon = u32::from_str_radix(&epsilon_str[..], 2).unwrap();
   // println!("{:?}, {:?}", epsilon_str, epsilon);

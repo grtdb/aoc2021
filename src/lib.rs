@@ -1,7 +1,5 @@
-// use std::io::prelude::*;
-// mod day01 {
+use transpose::transpose;
 
-// }
 pub fn aoc2021_test(pattern: &String, file: &String) -> usize {
   file.lines().filter(|l| l.contains(pattern)).count()
 }
@@ -23,6 +21,80 @@ pub fn day01_p2(input: String) -> usize {
     .collect::<Vec<usize>>()
     .windows(2).filter(|x| x[1] > x[0])
     .count()
+}
+
+fn prep_diagnostic(input: String, &input_len: &usize, &bits: &usize) -> Vec<u32> {
+  let input = input.lines()
+    .collect::<Vec<_>>().join("")
+    .chars().map(|c| c.to_digit(10).unwrap()).collect::<Vec<_>>();
+  
+  let arr_len = input.iter().count();
+
+  let mut output_array: Vec<u32> = vec![0; arr_len];
+  transpose(&input, &mut output_array, bits, input_len);
+
+  output_array
+}
+
+fn find_common_bit(bits: &[u32], if_eq: u32) -> u32 {
+  let len = bits.iter().count();
+  let half = len as u32 / 2;
+  let sum = bits.iter().sum::<u32>();
+  if len % 2 == 0 && sum == half {
+    if_eq
+  } else {
+    if (sum) > (half) {1} else {0} 
+  }
+}
+fn find_uncommon_bit(bits: &[u32], if_eq: u32) -> u32 {
+  if find_common_bit(bits, if_eq) == 1 {0} else {1}
+}
+
+pub fn day03_p1(raw_input: String, bits: usize) -> u32 {
+  let input_len = raw_input.lines().count();
+  let output_array = prep_diagnostic(raw_input, &input_len, &bits);
+
+  let mut common: Vec<u32> = vec![];
+  for b in 0..bits {
+    let row = b * input_len;
+    let bs = &output_array[row..row + input_len];
+    common.push(find_common_bit(bs, 1))
+  }
+
+  let common_bin_str = common.iter().map(|i| i.to_string()).collect::<Vec<_>>().join("");
+
+  let gamma = u32::from_str_radix(&common_bin_str[..], 2).unwrap();
+
+  // Flip bits and "cast" to String
+  let epsilon_str = common.iter().map(|&b| if b == 1 {"0"} else {"1"}).collect::<Vec<_>>().join("");
+  let epsilon = u32::from_str_radix(&epsilon_str[..], 2).unwrap();
+
+  gamma * epsilon
+}
+
+fn day03_p2_process(mut input: Vec<&str>, bits: usize, finder: fn(&[u32], u32) -> u32) -> u32 {
+  for b in 0..bits {
+    let len = input.iter().count();
+    if len == 1 { break; }
+
+    let prepd = prep_diagnostic(input.join("\n"), &len, &bits);
+    let row = b * len;
+    let bs = &prepd[row..row + len];
+
+    let common = finder(bs, 1);
+    input = input.into_iter()
+      .filter(|i| &i[b..b+1] == common.to_string())
+      .collect();
+  }
+  u32::from_str_radix(input[0], 2).unwrap()
+}
+
+pub fn day03_p2(raw_input: String, bits: usize) -> u32 {
+  let input: Vec<&str> = raw_input.lines().collect();
+  let o2_gen = day03_p2_process(input.clone(), bits, find_common_bit);
+  let co2_scrub = day03_p2_process(input.clone(), bits, find_uncommon_bit);
+  
+  o2_gen * co2_scrub
 }
 
 // Solution to Day 02 - refactor into 

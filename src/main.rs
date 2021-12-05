@@ -26,6 +26,7 @@ fn main() -> std::io::Result<()> {
     match &args.day {
         01 => {println!( "{}\n{}", day01_p1(reader.clone()), day01_p2(reader.clone()) )},
         03 => {println!( "{}\n{}", day03_p1(reader.clone(), 12), day03_p2(reader.clone(), 12) )},
+        04 => {println!( "{}\n{}", day04_p1(reader.clone()), day04_p2(reader.clone()) )},
         _ => {println!("No Solution found for Day {}", &args.day)},
     }
     Ok(())

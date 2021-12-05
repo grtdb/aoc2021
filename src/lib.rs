@@ -1,9 +1,12 @@
+// Req for Day 04
+#![feature(destructuring_assignment)]
 use transpose::transpose;
 
 pub fn aoc2021_test(pattern: &String, file: &String) -> usize {
   file.lines().filter(|l| l.contains(pattern)).count()
 }
 
+// Day 01
 pub fn day01_p1(input: String) -> usize {
   input.lines()
     .filter_map(|l| l.parse::<usize>().ok())
@@ -23,6 +26,7 @@ pub fn day01_p2(input: String) -> usize {
     .count()
 }
 
+// Day 03
 fn prep_diagnostic(input: String, &input_len: &usize, &bits: &usize) -> Vec<u32> {
   let input = input.lines()
     .collect::<Vec<_>>().join("")
@@ -95,6 +99,151 @@ pub fn day03_p2(raw_input: String, bits: usize) -> u32 {
   let co2_scrub = day03_p2_process(input.clone(), bits, find_uncommon_bit);
   
   o2_gen * co2_scrub
+}
+
+// Day 04
+#[derive(Debug, Clone, Copy)]
+enum BingoNum<T> {Unmarked(T), Marked(T)}
+type BingoBoard<'a> = Vec<BingoNum<&'a str>>;
+type BingoGame<'a> = (Vec<&'a str>, Vec<BingoBoard<'a>>);
+
+fn build_bingo<'a>(input: &'a String) -> BingoGame<'a> {
+  let mut input = input.lines();
+  let draws: Vec<&str> = input.next().unwrap().split(",").collect();
+  // Burn known blank line
+  input.next();
+  let mut boards: Vec<BingoBoard> = vec![];
+  let mut board: BingoBoard = vec![];
+  for l in input {
+    if l == "" {
+      // Board complete, push to collection
+      boards.push(board);
+      // Clear for next board
+      board = vec![];
+      continue;
+    }
+    let mut line: Vec<BingoNum<&str>> = l.split_whitespace()
+      .map(|n| BingoNum::Unmarked(n))
+      .collect();
+    board.append(&mut line);
+  }
+  boards.push(board);
+
+  (draws, boards)
+}
+
+fn mark_bingo_board<'a>(num: &str, board: BingoBoard<'a>) -> BingoBoard<'a> {
+  use BingoNum::*;
+
+  board.iter().map(|n| match n {
+    Unmarked(x) => {if x == &num {Marked(*x)} else {Unmarked(*x)}},
+    Marked(x) => {Marked(*x)},
+  }).collect()
+}
+
+fn play_bingo_draw(game: BingoGame) -> (BingoGame, &str) {
+  let (mut draws, boards) = game;
+  // remove() is slow - consider storing reversed `draws` and pop()'ing if causing issue
+  let draw = draws.remove(0);
+
+  let mut marked_boards: Vec<BingoBoard> = vec![];
+  for b in boards {
+    marked_boards.push(mark_bingo_board(draw, b));
+  }
+
+  ((draws, marked_boards), draw)
+}
+
+fn check_bingo_line(line: &[BingoNum<&str>]) -> bool {
+  use BingoNum::*;
+
+  line.iter().all(|n| match n {
+    Marked(_) => {true},
+    _ => {false}
+  })
+}
+
+fn check_bingo_board(board: &BingoBoard) -> bool {
+  // Hardcode for now
+  let size = 5;
+  // Check horizontal
+  for l in 0..size {
+    let row_idx = l * size;
+    let row = &board[row_idx..row_idx + size];
+    if check_bingo_line(row) {return true};
+  }
+  // Check vertical
+  let mut vert: BingoBoard = vec![BingoNum::Unmarked("0"); 25];
+  transpose(&board, &mut vert, 5, 5);
+  for l in 0..size {
+    let row_idx = l * size;
+    let row = &vert[row_idx..row_idx + size];
+    if check_bingo_line(row) {return true};
+  }
+  false
+}
+
+fn score_bingo_board(board: BingoBoard, last_draw: &str) -> usize {
+  use BingoNum::*;
+  // Count the board
+  // Refactor with filter_map() for cool points
+  board.iter().filter(|n| match n {
+    Unmarked(_) => {true},
+    _ => {false},
+    }).map(|n| if let Unmarked(v) = n {v.parse().unwrap()} else {0})
+    .sum::<usize>() * last_draw.parse::<usize>().unwrap()
+}
+
+pub fn day04_p1(raw_input: String) -> usize {
+  let mut game = build_bingo(&raw_input);
+  
+  let mut winning_board: Option<BingoBoard> = None;
+  let mut last_draw: &str = "No Draw";
+  while game.0.iter().count() != 0 {
+    (game, last_draw) = play_bingo_draw(game);
+    let bs = game.1.clone();
+    for b in bs {
+      if check_bingo_board(&b) { winning_board = Some(b); break; }
+    }
+    if let Some(_) = winning_board { break; }
+  }
+  if let None = winning_board {println!("No winners!"); return 0}
+  
+  score_bingo_board(winning_board.unwrap(), last_draw)
+}
+
+pub fn day04_p2(raw_input: String) -> usize {
+  let mut game = build_bingo(&raw_input);
+
+  let mut last_board: Option<BingoBoard> = None;
+  let mut last_draw: &str;
+  let mut last_winning_draw: &str = "";
+  while game.0.iter().count() != 0 {
+    (game, last_draw) = play_bingo_draw(game);
+    let bs = game.1.clone();
+    let mut bs_to_remove = vec![];
+    for (i, b) in bs.iter().enumerate() {
+      if check_bingo_board(&b) {
+        last_board = Some(b.clone());
+        bs_to_remove.push(i);
+        last_winning_draw = last_draw;
+      }
+      let mut new_boards = bs.clone();
+      for i in &bs_to_remove {
+        // Wipe contents of board...
+        new_boards[*i] = vec![];
+      }
+      // ...so it can be filtered out
+      let n_boards = new_boards.iter()
+        .filter(|b| (b).iter().count() != 0)
+        .map(|b| b.to_owned())
+        .collect();
+      game = (game.0, n_boards);
+    }
+  }
+  if let None = last_board {println!("No winners!"); return 0}
+  
+  score_bingo_board(last_board.unwrap(), last_winning_draw)
 }
 
 // Solution to Day 02 - refactor into 

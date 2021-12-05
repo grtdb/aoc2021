@@ -208,7 +208,6 @@ pub fn day04_p1(raw_input: String) -> usize {
     if let Some(_) = winning_board { break; }
   }
   if let None = winning_board {println!("No winners!"); return 0}
-  println!("Winning Board!\n{:?}\nLast Drawn was {:?}", winning_board, last_draw);
   
   score_bingo_board(winning_board.unwrap(), last_draw)
 }
@@ -217,7 +216,7 @@ pub fn day04_p2(raw_input: String) -> usize {
   let mut game = build_bingo(&raw_input);
 
   let mut last_board: Option<BingoBoard> = None;
-  let mut last_draw: &str = "";
+  let mut last_draw: &str;
   let mut last_winning_draw: &str = "";
   while game.0.iter().count() != 0 {
     (game, last_draw) = play_bingo_draw(game);
@@ -239,19 +238,10 @@ pub fn day04_p2(raw_input: String) -> usize {
         .filter(|b| (b).iter().count() != 0)
         .map(|b| b.to_owned())
         .collect();
-      // ;
-      // let mut n_boards = vec![];
-      // for b in new_new_boards {
-      //   n_boards.push(b);
-      // }
-      // let new_new_boards = new_boards.iter()
-      //   .filter(|b| (b).iter().count() != 0)
-      //   .collect::<Vec<BingoBoard>>();
       game = (game.0, n_boards);
     }
   }
   if let None = last_board {println!("No winners!"); return 0}
-  println!("Winning Board!\n{:?}\nLast Drawn was {:?}", last_board, last_draw);
   
   score_bingo_board(last_board.unwrap(), last_winning_draw)
 }

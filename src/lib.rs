@@ -246,7 +246,84 @@ pub fn day04_p2(raw_input: String) -> usize {
   score_bingo_board(last_board.unwrap(), last_winning_draw)
 }
 
-// Solution to Day 02 - refactor into 
+// Day 05
+type Point = (usize, usize);
+type Vector = (Point, Point);
+type Field = Vec<usize>;
+
+fn day05_process_input(input: String) -> Vec<Vector>{
+  let input = input.lines();
+  input.map(|l| l.split(" -> ")
+    .map(|p| p.split(",")
+      .map(|q| q.parse::<usize>().unwrap()).collect())
+    .map(|p: Vec<usize>| (p[0],p[1]) ).collect()
+  ).map(|p: Vec<Point>| (p[0],p[1]) ).collect::<Vec<Vector>>()
+}
+
+fn find_field_size(vs: &Vec<Vector>) -> (usize, usize) {
+  use std::cmp::max;
+  let mut x = 0;
+  let mut y = 0;
+  for v in vs {
+    let (p0, p1) = v;
+    let ps = vec![p0, p1];
+    for p in ps {
+      x = max(x, p.0);
+      y = max(y, p.1)
+    }
+  }
+  (x+1,y+1)
+}
+
+fn between_straight_points(v: &Vector) -> Vec<Point> {
+  let ((x0, y0),(x1, y1)) = v.clone().to_owned();
+  let mut ps = vec![(x1, y1)];
+  
+  if x0 == x1 {
+    for y in y0..y1 {
+      println!("Adding {:?},{:?}", x0, y);
+      ps.push( (x0, y) );
+    }
+  } else {
+    for x in x0..x1 {
+      println!("Adding {:?},{:?}", x, y0);
+      ps.push( (x, y0) );
+    }
+  }
+
+  ps
+}
+
+pub fn day05_p1(raw_input: String) -> usize {
+  let input = day05_process_input(raw_input);
+  println!("{:?}\n", input);
+  let (fs_x, fs_y) = find_field_size(&input);
+  let mut field: Field = vec![0; (fs_x + 1) * (fs_y + 1)];
+  // Filter non-straight lines
+  let f_input: Vec<&Vector> = input.iter()
+    .filter(|v| (v.0.0 == v.1.0) || (v.0.1 == v.1.1) ).collect();
+  println!("Just straight lines\n{:?}", f_input);
+  let mut ps: Vec<Point> = vec![];
+  for v in f_input {
+    let mut g = between_straight_points(v);
+    ps.append(&mut g)
+  }
+  // println!("All the points\n{:?}", ps);
+  for p in ps {
+    let (x,y) = p;
+    let pos = (y * fs_x) + x;
+    field[pos] = field[pos] + 1;
+  }
+  
+    // Show field
+  for y in 0..fs_y {
+    println!("{:?}", &field[y*fs_x..y*fs_x+fs_x]);
+  }
+
+  1
+}
+
+// Solution to Day 02 - refactor into this lib
 // let input: Vec<&str> = reader.lines().collect();
 //   let mut inst: Vec<(&str, i32)> = vec!();
 //   for i in input {

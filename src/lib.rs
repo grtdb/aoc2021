@@ -161,8 +161,6 @@ fn check_bingo_line(line: &[BingoNum<&str>]) -> bool {
     Marked(_) => {true},
     _ => {false}
   })
-  // res
-  // false
 }
 
 fn check_bingo_board(board: &BingoBoard) -> bool {
@@ -185,8 +183,18 @@ fn check_bingo_board(board: &BingoBoard) -> bool {
   false
 }
 
-pub fn day04_p1(raw_input: String) -> usize {
+fn score_bingo_board(board: BingoBoard, last_draw: &str) -> usize {
   use BingoNum::*;
+  // Count the board
+  // Refactor with filter_map() for cool points
+  board.iter().filter(|n| match n {
+    Unmarked(_) => {true},
+    _ => {false},
+    }).map(|n| if let Unmarked(v) = n {v.parse().unwrap()} else {0})
+    .sum::<usize>() * last_draw.parse::<usize>().unwrap()
+}
+
+pub fn day04_p1(raw_input: String) -> usize {
   let mut game = build_bingo(&raw_input);
   
   let mut winning_board: Option<BingoBoard> = None;
@@ -201,17 +209,27 @@ pub fn day04_p1(raw_input: String) -> usize {
   }
   if let None = winning_board {println!("No winners!"); return 0}
   println!("Winning Board!\n{:?}\nLast Drawn was {:?}", winning_board, last_draw);
-
-  // Count the board
-  let b_score: usize = winning_board.unwrap().iter()
-    .filter(|n| match n {
-      Unmarked(_) => {true},
-      _ => {false},
-    }).map(|n| if let Unmarked(v) = n {v.parse().unwrap()} else {0})
-    .sum::<usize>() * last_draw.parse::<usize>().unwrap();
-  println!("\nBoard Score is {:?}\n", b_score);
   
-  b_score
+  score_bingo_board(winning_board.unwrap(), last_draw)
+}
+
+pub fn day04_p2(raw_input: String) -> usize {
+  let mut game = build_bingo(&raw_input);
+  
+  let mut winning_board: Option<BingoBoard> = None;
+  let mut last_draw: &str = "No Draw";
+  while game.0.iter().count() != 0 {
+    (game, last_draw) = play_bingo_draw(game);
+    let bs = game.1.clone();
+    for b in bs {
+      if check_bingo_board(&b) { winning_board = Some(b); break; }
+    }
+    if let Some(_) = winning_board { break; }
+  }
+  if let None = winning_board {println!("No winners!"); return 0}
+  println!("Winning Board!\n{:?}\nLast Drawn was {:?}", winning_board, last_draw);
+  
+  score_bingo_board(winning_board.unwrap(), last_draw)
 }
 
 // Solution to Day 02 - refactor into 
